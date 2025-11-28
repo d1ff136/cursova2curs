@@ -1,0 +1,303 @@
+#include <iostream>
+using namespace std;
+//класична FIFO-черга на однозв’язному списку
+template<typename T>
+class queue {
+private:
+    struct node {
+        T data;
+        node* next;
+        node(const T& value, node* n = nullptr) : data(value), next(n) {}
+    };
+    node* front;  // вказівник на перший елемент
+    node* rear;   // вказівник на останній елемент
+     int count; // кількість елементів у черзі
+
+public:
+    //вкладений ітератор (тільки вперед, так як односв'язним список)
+    class iterator {
+    private:
+        node* current;
+    public:
+        iterator(node* p = nullptr) : current(p) {}
+        iterator& operator++();
+        iterator operator++(int);
+        bool operator==(const iterator& other) const { return current == other.current; }
+        bool operator!=(const iterator& other) const { return current != other.current; }
+    };
+    //конструктори та деструктор 
+    queue(); // конструктор за замовчуванням
+    queue(const queue& other); // конструктор копіювання
+    queue(queue&& other); // конструктор переміщення
+    queue& operator=(const queue& other); // оператор присвоєння (копіювання)
+    queue& operator=(queue&& other); // оператор присвоєння (переміщення)
+    ~queue(); // деструктор
+    //основні методи черги 
+    void enqueue(const T& value); // додати елемент у кінець
+    T dequeue(); // видалити і повернути перший елемент
+    T& peek(); // повернути посилання на перший елемент
+    const T& peek() const; // константна версія для читання
+    //методи контейнера
+    iterator begin() const; //ітератор на початок
+    iterator end() const; //ітератор на кінець
+    bool empty() const;//перевірка на порожність
+    int size() const;//кількість елементів
+    void clear();//очистити чергу
+    bool operator==(const queue& other) const;//порівняння вмісту
+    bool operator!=(const queue& other) const;//нерівність
+};
+
+
+// РЕАЛІЗАЦІЯ
+
+//конструктор за замовчуванням
+//призначення: створює порожню чергу
+//алгоритм: ініціалізує вказівники значенням nullptr та лічильник нулем
+template<typename T>
+queue<T>::queue() : front(nullptr), rear(nullptr), count(0) {}
+
+//конструктор копіювання
+//призначення: створює копію існуючої черги
+//алгоритм: проходить по всій вихідній черзі і додає елементи через enqueue
+template<typename T>
+queue<T>::queue(const queue& other) : front(nullptr), rear(nullptr), count(0) {
+    for (node* cur = other.front; cur != nullptr; cur = cur->next)
+        enqueue(cur->data);
+}
+
+//конструктор переміщення
+//призначення: ефективно переносить вміст іншої черги
+//алгоритм: копіює вказівники і обнуляє джерело
+template<typename T>
+queue<T>::queue(queue&& other) : front(other.front), rear(other.rear), count(other.count) {
+    other.front = other.rear = nullptr;
+    other.count = 0;
+}
+
+//оператор присвоєння (копіювання)
+//призначення: копіює вміст іншої черги в поточну
+//алгоритм: очищає поточну чергу, потім додає всі елементи з іншої
+template<typename T>
+queue<T>& queue<T>::operator=(const queue& other) {
+    if (this != &other) {
+        clear();
+        for (node* cur = other.front; cur != nullptr; cur = cur->next)
+            enqueue(cur->data);
+    }
+    return *this;
+}
+
+//оператор присвоєння (переміщення)
+//призначення: ефективно переносить вміст
+//алгоритм: очищає поточну чергу, копіює вказівники, обнуляє джерело
+template<typename T>
+queue<T>& queue<T>::operator=(queue&& other) {
+    if (this != &other) {
+        clear();
+        front = other.front;
+        rear = other.rear;
+        count = other.count;
+        other.front = other.rear = nullptr;
+        other.count = 0;
+    }
+    return *this;
+}
+
+//деструктор
+//призначення: звільняє всю виділену пам'ять
+//алгоритм: викликає clear()
+template<typename T>
+queue<T>::~queue() {
+    clear();
+}
+
+//додає елемент у кінець черги. 
+//призначення: вставити новий елемент у чергу
+//алгоритм: створює новий вузол, якщо черга порожня — front і rear вказують на нього,
+//інакше додає в кінець і оновлює rear
+//складність O(1)
+template<typename T>
+void queue<T>::enqueue(const T& value) {
+    node* new_node = new node(value);
+    if (empty()) {
+        front = rear = new_node;
+    }
+    else {
+        rear->next = new_node;
+        rear = new_node;
+    }
+    ++count;
+}
+
+//видаляє і повертає перший елемент.
+//призначення: отримати і видалити перший елемент
+//алгоритм: зберігає значення, видаляє вузол, оновлює front, rear (якщо треба) і лічильник
+//складність O(1)
+template<typename T>
+T queue<T>::dequeue() {
+    node* temp = front;
+    T value = temp->data;
+    front = front->next;
+    if (front == nullptr) rear = nullptr;
+    delete temp;
+    --count;
+    return value;
+}
+
+//повертає посилання на перший елемент
+//призначення: дозволити читання і записати першого елемента без видалення
+//алгоритм:повертає data з front,необхідно перевірити на !empty()
+template<typename T>
+T& queue<T>::peek() {
+    return front->data;
+}
+//константна версія для читання
+template<typename T>
+const T& queue<T>::peek() const {
+    return front->data;
+}
+//повертає ітератор на початок черги
+template<typename T>
+typename queue<T>::iterator queue<T>::begin() const {
+    return iterator(front);
+}
+
+//повертає ітератор на кінець, а точніше поза останній елемент
+template<typename T>
+typename queue<T>::iterator queue<T>::end() const {
+    return iterator(nullptr);
+}
+
+//перевірка на порожність
+template<typename T>
+bool queue<T>::empty() const {
+    return count == 0;
+}
+
+//повертає кількість елементів
+template<typename T>
+int queue<T>::size() const {
+    return count;
+}
+
+//повне очищення черги
+//призначення: видалити всі елементи
+//алгоритм: послідовно видаляє вузли з початку, поки черга не стане порожньою
+template<typename T>
+void queue<T>::clear() {
+    while (front != nullptr) {
+        node* temp = front;
+        front = front->next;
+        delete temp;
+    }
+    rear = nullptr;
+    count = 0;
+}
+
+//порівняння двох черг за вмістом
+//призначення: перевірити, чи однакові послідовності елементів
+//алгоритм: спочатку порівнює розміри, потім по черзі порівнює кожен елемент
+template<typename T>
+bool queue<T>::operator==(const queue& other) const {
+    if (count != other.count) return false;
+    node* a = front;
+    node* b = other.front;
+    while (a != nullptr) {
+        if (a->data != b->data) return false;
+        a = a->next;
+        b = b->next;
+    }
+    return true;
+}
+//перевантаження оператора нерівності через оператор рівності
+template<typename T>
+bool queue<T>::operator!=(const queue& other) const {
+    return !(*this == other);
+}
+
+//реалізація методів ітератора
+//префіксний інкремент
+template<typename T>
+typename queue<T>::iterator& queue<T>::iterator::operator++() {
+    current = current->next;
+    return *this;
+}
+//постфіксний інкремент
+template<typename T>
+typename queue<T>::iterator queue<T>::iterator::operator++(int) {
+    iterator temp = *this;
+    ++(*this);
+    return temp;
+}
+
+//ЗАДАЧА-ПРИКЛАД
+//"Хвиля", необхідно "інфікувати" сусідні елементи двовимірного масиву, показав на якому кроці число було інфікованно.
+//базується на принципі Гюйгенса 
+
+//власна структура
+template<typename T1, typename T2, typename T3>
+struct three {
+    T1 first; //у
+    T2 second; //х
+    T3 step; //step
+};
+//функція інфікації
+void inf(queue<three<int, int, int>>& q, int** a, int n, int y, int x, int step) {
+    //перевірка чи в межах матриці і на неінфікованість
+    if (y >= 0 && y < n && x >= 0 && x < n && a[y][x] == 0) {
+        q.enqueue({ y, x, step + 1 }); //додаємо в чергу
+        a[y][x] = step + 1; //інфіковуємо і позначаємо
+    }
+}
+
+// main
+int main() {
+    int n;
+    cin >> n;
+    //створення динамічного масива, динамічних масивів (матриця)
+    int** a = new int* [n];
+    for (int i = 0; i < n; ++i) {
+        a[i] = new int[n];
+    }
+    //черга для зберігання і обробки точок
+    queue<three<int, int, int>> q;
+    //зчитування матриці та ініціалізація початкових точок
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            cin >> a[i][j];
+            if (a[i][j] == 1) { //перший інфікований-додаємо в чергу
+                q.enqueue({ i, j, 1 });
+            }
+        }
+    }
+    while (!q.empty()) {
+        //беремо інфіковану точку з черги
+        three<int, int, int> p = q.dequeue();
+        int y = p.first; //y
+        int x = p.second; //x
+        int step = p.step; //step
+        //перевіряємо усіх сусідів цієї точки (8)
+        inf(q, a, n, y - 1, x - 1, step); //перевіряємо і інфіковуємо
+        inf(q, a, n, y - 1, x, step);
+        inf(q, a, n, y - 1, x + 1, step);
+        inf(q, a, n, y, x - 1, step);
+        inf(q, a, n, y, x + 1, step);
+        inf(q, a, n, y + 1, x - 1, step);
+        inf(q, a, n, y + 1, x, step);
+        inf(q, a, n, y + 1, x + 1, step);
+    }
+    //виводимо
+    cout << "Result: " << endl;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            cout << a[i][j] << " ";
+        }
+        cout << endl;
+    }
+    //очищуємо пам'ять
+    for (int i = 0; i < n; ++i) {
+        delete[] a[i];
+    }
+    delete[] a;
+    return 0;
+}

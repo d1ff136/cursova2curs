@@ -1,1 +1,0 @@
-# cursova2curs
