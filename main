@@ -1,5 +1,5 @@
 #include <iostream>
-#include <windows.h>
+
 using namespace std;
 
 //класична FIFO-черга на однозв’язному списку
@@ -96,8 +96,7 @@ queue<T>::~queue() {
 }
 
 //додає елемент у кінець черги.
-//призначення: вставити новий елемент у чергу
-//алгоритм: створює новий вузол, якщо черга порожня — front і rear вказують на нього,
+//алгоритм: створює новий вузол, якщо черга порожня - front і rear вказують на нього,
 //інакше додає в кінець і оновлює rear
 //складність O(1)
 template<typename T>
@@ -114,7 +113,6 @@ void queue<T>::enqueue(const T& value) {
 }
 
 //видаляє і повертає перший елемент.
-//призначення: отримати і видалити перший елемент
 //алгоритм: зберігає значення, видаляє вузол, оновлює front, rear (якщо треба) і лічильник
 //складність O(1)
 template<typename T>
@@ -128,7 +126,6 @@ T queue<T>::dequeue() {
     return value;
 }
 
-//повертає посилання на перший елемент
 //призначення: дозволити читання і запис першого елемента без видалення
 template<typename T>
 T& queue<T>::peek() {
@@ -186,17 +183,6 @@ void inf(queue<three<int, int, int>>& q, int** a, int n, int y, int x, int step)
     }
 }
 
-//функція демонстрація матриці з затримкою. Для того щоб вона динамічно з'являлась
-void show(int** a, int n) {
-    system("cls");
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            cout << a[i][j] << " ";
-        }
-        cout << endl;
-    }
-    Sleep(2000);//секундна затримка
-}
 
 // main
 int main() {
@@ -218,7 +204,6 @@ int main() {
             }
         }
     }
-    show(a, n);
     int prev_step = 1;
     while (!q.empty()) {
         //беремо інфіковану точку з черги
@@ -228,7 +213,7 @@ int main() {
         int step = p.step; //step
         if (step > prev_step) {
             prev_step = step;
-            show(a, n);
+            
         }
         //перевіряємо усіх сусідів цієї точки (8)
         inf(q, a, n, y - 1, x - 1, step); //перевіряємо і інфіковуємо
@@ -239,6 +224,14 @@ int main() {
         inf(q, a, n, y + 1, x - 1, step);
         inf(q, a, n, y + 1, x, step);
         inf(q, a, n, y + 1, x + 1, step);
+    }
+    cout <<"Result" << endl;
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            cout << a[i][j] << " ";
+        }
+        cout << endl;
     }
     //очищуємо пам'ять
     for (int i = 0; i < n; ++i) {
